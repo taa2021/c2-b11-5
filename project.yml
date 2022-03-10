@@ -1,0 +1,41 @@
+---
+resources:
+- name: c2-b11-5-git
+  type: git
+  icon: github
+  source:
+    uri: https://github.com/taa2021/c2-b11-5
+
+jobs:
+- name: get-rfam-data
+  public: true
+  plan:
+  - get: c2-b11-5-git
+    trigger: true
+  - task: get-data
+    config:
+      inputs:
+        - name: c2-b11-5-git
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: { repository: imega/mysql-client }
+      run:
+        path: sh
+        args:
+          - -exc
+          - cat c2-b11-5-git/data.sql | mysql --user rfamro --host mysql-rfam-public.ebi.ac.uk --port 4497 --database Rfam > ./files/results.log
+      outputs:
+        - name: files
+  - task: print-data
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source: { repository: busybox }
+      inputs:
+        - name: files
+      run:
+        path: cat
+        args:
+          - ./files/results.log
